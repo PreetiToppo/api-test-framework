@@ -1,0 +1,8 @@
+{
+  "base_url": "https://jsonplaceholder.typicode.com",
+  "timeout": 30,
+  "retries": 3,
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}
