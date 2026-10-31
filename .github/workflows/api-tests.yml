@@ -2,90 +2,62 @@ name: API Test Suite
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [ "main" ]
 
 jobs:
-  lint:
-    name: Run Ruff Linter
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run Ruff
-        run: |
-          python -m ruff check .
-
   test:
-    name: Run Pytest Suite with Allure
     runs-on: ubuntu-latest
-    needs: lint
-    
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        # Explicitly install allure-pytest and pytest-html if not in requirements
+        pip install allure-pytest pytest-html
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Run Ruff Linter
+      run: python -m ruff check .
 
-      - name: Set up Allure CLI
-        run: |
-          wget -q https://github.com/allure-framework/allure2/releases/download/2.28.0/allure-2.28.0.zip -O /tmp/allure.zip
-          unzip -q /tmp/allure.zip -d /opt/
-          ln -sf /opt/allure-2.28.0/bin/allure /usr/bin/allure
+    - name: Run Pytest Suite with Allure
+      # We set the environment variable here so the tests can use it
+      env:
+        BASE_URL: "https://jsonplaceholder.typicode.com"
+      # --alluredir tells pytest where to save raw results
+      # --html generates the standard HTML report
+      run: |
+        python -m pytest -n 4 --alluredir=allure-results --html=reports/report.html --self-contained-html
 
-      - name: Run tests in parallel
-        run: |
-          pytest -n 4 -v --tb=short --alluredir=allure-results
-        env:
-          BASE_URL: https://jsonplaceholder.typicode.com
+    - name: Generate Allure Report
+      # 'if: always()' ensures this runs even if tests fail, so you get a report!
+      if: always()
+      run: |
+        # Download and install Allure CLI
+        curl -o allure.zip -L https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.zip
+        unzip -o allure.zip -d /opt/
+        export PATH=$PATH:/opt/allure-2.27.0/bin
+        # Generate the report from the raw results
+        allure generate allure-results --clean -o allure-report
 
-      - name: Generate Allure report
-        run: |
-          allure generate allure-results --output allure-report --clean
+    - name: Upload Allure Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-report
+        path: allure-report/
 
-      - name: Upload Allure report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-report
-          path: allure-report/
-          retention-days: 30
-
-      - name: Upload HTML report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-report
-          path: reports/
-          retention-days: 30
-
-      - name: Check test status
-        if: failure()
-        run: |
-          echo "Tests failed. Check the reports for details."
-          exit 1
+    - name: Upload HTML Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: html-report
+        path: reports/report.html
