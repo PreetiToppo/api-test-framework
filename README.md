@@ -1,5 +1,12 @@
 # API Test Automation Framework
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/PreetiToppo/api-test-framework/api-tests.yml?branch=main&label=CI%20Pipeline&logo=github)
+![Python Version](https://img.shields.io/badge/python-3.11-blue)
+![Pytest](https://img.shields.io/badge/pytest-7.4-green)
+![Ruff](https://img.shields.io/badge/linter-ruff-success)
+
+![Allure Report](allure-report.png)
+
 A robust, production-ready API test automation framework built with Python, Pytest, and the Requests library. This framework demonstrates professional software engineering practices including reusable components, comprehensive test coverage, data-driven testing, and CI/CD integration.
 
 ## Table of Contents
